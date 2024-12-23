@@ -1,4 +1,5 @@
 'use client';
+
 import { zodResolver } from '@hookform/resolvers/zod';
 import { motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
@@ -61,18 +62,25 @@ export default function Form() {
   const saveStepData = () => {
     const currentValues = getValues();
     const currentFields = steps[currentStep]?.fields || [];
+
     const stepData = currentFields.reduce((acc, field) => {
-      acc[field as keyof Inputs] = currentValues[field as keyof Inputs] as Inputs[keyof Inputs];
+      if (field in currentValues) {
+        const value = currentValues[field as keyof Inputs];
+        if (value !== undefined && (typeof value === 'string' || typeof value === 'boolean')) {
+          acc[field as keyof Inputs] = value;
+        }
+      }
       return acc;
     }, {} as Partial<Inputs>);
+
     setFormData((prev) => ({ ...prev, ...stepData }));
   };
-  
+
+
 
   const processForm: SubmitHandler<Inputs> = (data) => {
     console.log('Final form data:', data);
     setIsSubmitted(true);
-    // Handle form submission
   };
 
   type FieldName = keyof Inputs;
@@ -100,47 +108,34 @@ export default function Form() {
       setCurrentStep((step) => step - 1);
     }
   };
-
-  // Format boolean values for display
   const formatValue = (value: any) => {
     if (typeof value === 'boolean') {
       return value ? 'Yes' : 'No';
     }
     return value || 'Not provided';
   };
-
-  // Format field names for display
   const formatFieldName = (field: string) => {
     return field
       .replace(/([A-Z])/g, ' $1')
       .replace(/^./, (str) => str.toUpperCase());
   };
-
-  // Group form fields by section
   const sections = {
     'Personal Information': ['firstName', 'lastName', 'email'],
     'Address Details': ['country', 'state', 'city', 'street', 'zip'],
     'Preferences': ['joinNewsletter', 'enableNotification']
   };
 
-  // Load saved data when navigating between steps
   const loadStepData = () => {
     Object.keys(formData).forEach((field) => {
-      const value = formData[field as keyof Inputs];
-      if (typeof value === 'string' || typeof value === 'boolean') {
-        setValue(field as keyof Inputs, value);
-      }
+      setValue(field as keyof Inputs, formData[field as keyof Inputs]);
     });
   };
-
-  // Load saved data when component mounts or step changes
   useEffect(() => {
     loadStepData();
   }, [currentStep]);
 
   return (
     <section className="absolute inset-0 flex flex-col justify-between p-24">
-      {/* steps navigation remains the same */}
       <nav aria-label="Progress">
         <ol role="list" className="space-y-4 md:flex md:space-x-8 md:space-y-0">
           {steps.map((step, index) => (
@@ -260,7 +255,7 @@ export default function Form() {
           </motion.div>
         )}
 
-       {currentStep === 1 && (
+        {currentStep === 1 && (
           <motion.div
             initial={{ x: delta >= 0 ? '50%' : '-50%', opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
@@ -463,7 +458,7 @@ export default function Form() {
               ))}
             </div>
 
-             {isSubmitted ? (
+            {isSubmitted ? (
               <div className="mt-8 rounded-md border border-green-200 bg-green-50 p-4">
                 <p className="text-sm text-green-800">
                   Form submitted successfully!
