@@ -62,20 +62,17 @@ export default function Form() {
   const saveStepData = () => {
     const currentValues = getValues();
     const currentFields = steps[currentStep]?.fields || [];
-
-    const stepData = currentFields.reduce((acc, field) => {
-      if (field in currentValues) {
-        const value = currentValues[field as keyof Inputs];
-        if (value !== undefined && (typeof value === 'string' || typeof value === 'boolean')) {
-          acc[field as keyof Inputs] = value;
-        }
+  
+    const stepData = currentFields.reduce<Partial<Inputs>>((acc, field) => {
+      const value = currentValues[field as keyof Inputs];
+      if (value !== undefined) {
+        (acc as any)[field] = value; // Using type assertion to avoid the error
       }
       return acc;
-    }, {} as Partial<Inputs>);
-
-    setFormData((prev) => ({ ...prev, ...stepData }));
-  };
-
+    }, {});
+  
+    setFormData(prev => ({ ...prev, ...stepData }));
+  };
 
 
   const processForm: SubmitHandler<Inputs> = (data) => {
